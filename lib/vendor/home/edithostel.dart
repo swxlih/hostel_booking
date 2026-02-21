@@ -78,101 +78,124 @@ class _EdithostelState extends State<Edithostel> {
     }
   }
 
- Future<void> _submitData() async {
-  // 1️⃣ Validate form
-  if (!_formKey.currentState!.validate()) {
-    _showErrorSnackBar('Please fill all required fields');
-    return;
-  }
-
-  if (selectedgenter == null) {
-    _showErrorSnackBar('Please select gender type');
-    return;
-  }
-
-  if (selecteddormetry == null) {
-    _showErrorSnackBar('Please select accommodation category');
-    return;
-  }
-
-  if (phoneNumber == null || phoneNumber!.isEmpty) {
-    _showErrorSnackBar('Please enter phone number');
-    return;
-  }
-
-  setState(() => isLoading = true);
-
-  try {
-    // 2️⃣ Image handling (keep old if unchanged)
-    if (pickedfile != null ||
-        pickedfile2 != null ||
-        pickedfile3 != null ||
-        pickedfile4 != null) {
-      await pickAndUploadImage();
-    } else {
-      imageurl = widget.hostelmodel!.imageUrl ?? [];
+  Future<void> _submitData() async {
+    // 1️⃣ Validate form
+    if (!_formKey.currentState!.validate()) {
+      _showErrorSnackBar('Please fill all required fields');
+      return;
     }
 
-    // 3️⃣ Prepare update body
-    Hostelmodel body = Hostelmodel(
-      ownerName: _ownerNameController.text.trim(),
-      hostelName: _hostelnameController.text.trim(),
-      place: _placenameController.text.trim(),
-      location: _locationController.text.trim(),
-      address: _addressController.text.trim(),
-      phone: phoneNumber,
-      price: _priceController.text.trim(),
-      availableBeds: _availablebedController.text.trim(),
-      discription: _discriptionController.text.trim(),
-      selectedgenter: selectedgenter,
-      selecteddormetry: selecteddormetry,
-      hostelerid: widget.hostelmodel!.hostelerid,
-      imageUrl: imageurl,
-      amenities: Amenities(
-        locker: option1,
-        furnished: option2,
-        food: option3,
-        parking: option4,
-        attachedBathroom: option5,
-      ),
-      createdAt: widget.hostelmodel!.createdAt, // keep original
-    );
+    if (selectedgenter == null) {
+      _showErrorSnackBar('Please select gender type');
+      return;
+    }
 
-    // 4️⃣ UPDATE ONLY
-    await FirebaseFirestore.instance
-        .collection('Hostels')
-        .doc(widget.hostelmodel!.hostelid)
-        .update(body.toJson());
+    if (selecteddormetry == null) {
+      _showErrorSnackBar('Please select accommodation category');
+      return;
+    }
 
-    _showSuccessSnackBar('Hostel updated successfully!');
-    Navigator.pop(context);
-  } catch (e) {
-    _showErrorSnackBar('Error: $e');
-  } finally {
-    setState(() => isLoading = false);
+    if (phoneNumber == null || phoneNumber!.isEmpty) {
+      _showErrorSnackBar('Please enter phone number');
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      // 2️⃣ Image handling (keep old if unchanged)
+      List<String> finalImageUrls = [];
+
+      // Check and upload first image
+      if (pickedfile != null) {
+        final url = await cloudinaryUploader.uploadFile(pickedfile!);
+        finalImageUrls.add(url.toString());
+      } else if (imageurl.isNotEmpty && imageurl[0].isNotEmpty) {
+        finalImageUrls.add(imageurl[0]);
+      }
+
+      // Check and upload second image
+      if (pickedfile2 != null) {
+        final url = await cloudinaryUploader.uploadFile(pickedfile2!);
+        finalImageUrls.add(url.toString());
+      } else if (imageurl.length > 1 && imageurl[1].isNotEmpty) {
+        finalImageUrls.add(imageurl[1]);
+      }
+
+      // Check and upload third image
+      if (pickedfile3 != null) {
+        final url = await cloudinaryUploader.uploadFile(pickedfile3!);
+        finalImageUrls.add(url.toString());
+      } else if (imageurl.length > 2 && imageurl[2].isNotEmpty) {
+        finalImageUrls.add(imageurl[2]);
+      }
+
+      // Check and upload fourth image
+      if (pickedfile4 != null) {
+        final url = await cloudinaryUploader.uploadFile(pickedfile4!);
+        finalImageUrls.add(url.toString());
+      } else if (imageurl.length > 3 && imageurl[3].isNotEmpty) {
+        finalImageUrls.add(imageurl[3]);
+      }
+
+      // 3️⃣ Prepare update body
+      Hostelmodel body = Hostelmodel(
+        ownerName: _ownerNameController.text.trim(),
+        hostelName: _hostelnameController.text.trim(),
+        place: _placenameController.text.trim(),
+        location: _locationController.text.trim(),
+        address: _addressController.text.trim(),
+        phone: phoneNumber,
+        price: _priceController.text.trim(),
+        availableBeds: _availablebedController.text.trim(),
+        discription: _discriptionController.text.trim(),
+        selectedgenter: selectedgenter,
+        selecteddormetry: selecteddormetry,
+        hostelerid: widget.hostelmodel!.hostelerid,
+        imageUrl: finalImageUrls,
+        amenities: Amenities(
+          locker: option1,
+          furnished: option2,
+          food: option3,
+          parking: option4,
+          attachedBathroom: option5,
+        ),
+        createdAt: widget.hostelmodel!.createdAt, // keep original
+      );
+
+      // 4️⃣ UPDATE ONLY
+      await FirebaseFirestore.instance
+          .collection('Hostels')
+          .doc(widget.hostelmodel!.hostelid)
+          .update(body.toJson());
+
+      _showSuccessSnackBar('Hostel updated successfully!');
+      Navigator.pop(context);
+    } catch (e) {
+      _showErrorSnackBar('Error: $e');
+    } finally {
+      setState(() => isLoading = false);
+    }
   }
-}
 
-void _showSuccessSnackBar(String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Row(
-        children: [
-          const Icon(Icons.check_circle, color: Colors.white),
-          SizedBox(width: 8.w),
-          Expanded(child: Text(message)),
-        ],
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            SizedBox(width: 8.w),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.r),
+        ),
       ),
-      backgroundColor: Colors.green,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.r),
-      ),
-    ),
-  );
-}
-
-
+    );
+  }
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -186,53 +209,54 @@ void _showSuccessSnackBar(String message) {
         ),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.r),
+        ),
       ),
     );
   }
 
   @override
-void initState() {
-  super.initState();
+  void initState() {
+    super.initState();
 
-  if (widget.hostelmodel != null) {
-    final h = widget.hostelmodel!;
+    if (widget.hostelmodel != null) {
+      final h = widget.hostelmodel!;
 
-    _ownerNameController.text = h.ownerName ?? '';
-    _hostelnameController.text = h.hostelName ?? '';
-    _placenameController.text = h.place ?? '';
-    _locationController.text = h.location ?? '';
-    _addressController.text = h.address ?? '';
-    _priceController.text = h.price ?? '';
-    _availablebedController.text = h.availableBeds ?? '';
-    _discriptionController.text = h.discription ?? '';
-    imageurl = List.from(h.imageUrl ?? []);
+      _ownerNameController.text = h.ownerName ?? '';
+      _hostelnameController.text = h.hostelName ?? '';
+      _placenameController.text = h.place ?? '';
+      _locationController.text = h.location ?? '';
+      _addressController.text = h.address ?? '';
+      _priceController.text = h.price ?? '';
+      _availablebedController.text = h.availableBeds ?? '';
+      _discriptionController.text = h.discription ?? '';
+      imageurl = List.from(h.imageUrl ?? []);
 
-    phoneNumber = h.phone;
-    if (gendertype.contains(h.selectedgenter)) {
-      selectedgenter = h.selectedgenter;
-    } else {
-      selectedgenter = null; // fallback
-    }
+      phoneNumber = h.phone;
+      if (gendertype.contains(h.selectedgenter)) {
+        selectedgenter = h.selectedgenter;
+      } else {
+        selectedgenter = null; // fallback
+      }
 
-    // 🔧 FIX DORMETRY VALUE
-    if (dormetrytype.contains(h.selecteddormetry)) {
+      // 🔧 FIX DORMETRY VALUE
+      if (dormetrytype.contains(h.selecteddormetry)) {
+        selecteddormetry = h.selecteddormetry;
+      } else {
+        selecteddormetry = null;
+      }
       selecteddormetry = h.selecteddormetry;
-    } else {
-      selecteddormetry = null;
+
+      option1 = h.amenities?.locker ?? false;
+      option2 = h.amenities?.furnished ?? false;
+      option3 = h.amenities?.food ?? false;
+      option4 = h.amenities?.parking ?? false;
+      option5 = h.amenities?.attachedBathroom ?? false;
+
+      imageurl = List.from(h.imageUrl ?? []);
     }
-    selecteddormetry = h.selecteddormetry;
-
-    option1 = h.amenities?.locker ?? false;
-    option2 = h.amenities?.furnished ?? false;
-    option3 = h.amenities?.food ?? false;
-    option4 = h.amenities?.parking ?? false;
-    option5 = h.amenities?.attachedBathroom ?? false;
-
-    imageurl = List.from(h.imageUrl ?? []);
   }
-}
-
 
   void _clearForm() {
     _formKey.currentState?.reset();
@@ -298,7 +322,8 @@ void initState() {
           controller: controller,
           keyboardType: keyboardType,
           maxLines: maxLines,
-          validator: validator ??
+          validator:
+              validator ??
               (value) {
                 if (value == null || value.isEmpty) {
                   return 'Please enter $label';
@@ -311,7 +336,10 @@ void initState() {
             suffixIcon: suffixIcon,
             filled: true,
             fillColor: Colors.grey[50],
-            contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16.w,
+              vertical: 14.h,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
               borderSide: BorderSide(color: Colors.grey[300]!),
@@ -360,7 +388,10 @@ void initState() {
             hintStyle: TextStyle(fontSize: 13.sp, color: Colors.grey[400]),
             filled: true,
             fillColor: Colors.grey[50],
-            contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16.w,
+              vertical: 14.h,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
               borderSide: BorderSide(color: Colors.grey[300]!),
@@ -388,9 +419,19 @@ void initState() {
     );
   }
 
-  Widget _buildImagePicker(XFile? file, Function() onTap, int index) {
+  Widget _buildImagePicker(
+    XFile? file,
+    String? existingImageUrl,
+    Function() onTap,
+    Function()? onRemove,
+    int index,
+  ) {
+    bool hasImage =
+        file != null ||
+        (existingImageUrl != null && existingImageUrl.isNotEmpty);
+
     return GestureDetector(
-      onTap: onTap,
+      onTap: hasImage ? null : onTap,
       child: Container(
         height: 90.h,
         width: 85.w,
@@ -399,11 +440,15 @@ void initState() {
           borderRadius: BorderRadius.circular(12.r),
           color: Colors.grey[50],
         ),
-        child: file == null
+        child: !hasImage
             ? Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add_photo_alternate, size: 28.sp, color: Colors.grey[400]),
+                  Icon(
+                    Icons.add_photo_alternate,
+                    size: 28.sp,
+                    color: Colors.grey[400],
+                  ),
                   SizedBox(height: 4.h),
                   Text(
                     index == 0 ? 'Required' : 'Optional',
@@ -412,25 +457,34 @@ void initState() {
                 ],
               )
             : Stack(
+                fit: StackFit.expand,
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10.r),
-                    child: Image.file(
-                      File(file.path),
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                    ),
+                    child: file != null
+                        ? Image.file(File(file.path), fit: BoxFit.cover)
+                        : Image.network(existingImageUrl!, fit: BoxFit.cover),
                   ),
                   Positioned(
                     top: 4,
                     right: 4,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        shape: BoxShape.circle,
+                    child: GestureDetector(
+                      onTap: onRemove,
+                      child: Container(
+                        padding: EdgeInsets.all(4.r),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(color: Colors.black26, blurRadius: 4),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.close,
+                          color: Colors.red,
+                          size: 16.sp,
+                        ),
                       ),
-                      child: Icon(Icons.check_circle, color: Colors.green, size: 20.sp),
                     ),
                   ),
                 ],
@@ -439,7 +493,11 @@ void initState() {
     );
   }
 
-  Widget _buildAmenityCheckbox(String title, bool value, Function(bool?) onChanged) {
+  Widget _buildAmenityCheckbox(
+    String title,
+    bool value,
+    Function(bool?) onChanged,
+  ) {
     return InkWell(
       onTap: () => onChanged(!value),
       child: Container(
@@ -527,7 +585,7 @@ void initState() {
                       label: "Hostel Name",
                       hint: "Enter hostel name",
                     ),
-                     _buildTextField(
+                    _buildTextField(
                       controller: _placenameController,
                       label: "Place ",
                       hint: "Enter Place Name",
@@ -539,9 +597,14 @@ void initState() {
                       suffixIcon: IconButton(
                         icon: Icon(Icons.location_on, color: Color(0xffFEAA61)),
                         onPressed: () async {
-                          final Uri googleMapsUrl = Uri.parse('https://www.google.com/maps');
+                          final Uri googleMapsUrl = Uri.parse(
+                            'https://www.google.com/maps',
+                          );
                           if (await canLaunchUrl(googleMapsUrl)) {
-                            await launchUrl(googleMapsUrl, mode: LaunchMode.inAppBrowserView);
+                            await launchUrl(
+                              googleMapsUrl,
+                              mode: LaunchMode.inAppBrowserView,
+                            );
                           } else {
                             _showErrorSnackBar('Could not open Google Maps');
                           }
@@ -561,14 +624,16 @@ void initState() {
                       hint: "Select gender preference",
                       value: selectedgenter,
                       items: gendertype,
-                      onChanged: (value) => setState(() => selectedgenter = value),
+                      onChanged: (value) =>
+                          setState(() => selectedgenter = value),
                     ),
                     _buildDropdown(
                       label: "Accommodation Category",
                       hint: "Select category",
                       value: selecteddormetry,
                       items: dormetrytype,
-                      onChanged: (value) => setState(() => selecteddormetry = value),
+                      onChanged: (value) =>
+                          setState(() => selecteddormetry = value),
                     ),
                     _buildSectionTitle(" Pricing & Availability"),
                     _buildTextField(
@@ -603,11 +668,31 @@ void initState() {
                     ),
 
                     _buildSectionTitle(" Amenities"),
-                    _buildAmenityCheckbox("🔒 Locker", option1, (val) => setState(() => option1 = val!)),
-                    _buildAmenityCheckbox("🛋️ Furnished", option2, (val) => setState(() => option2 = val!)),
-                    _buildAmenityCheckbox("🍽️ Food", option3, (val) => setState(() => option3 = val!)),
-                    _buildAmenityCheckbox("🚗 Parking", option4, (val) => setState(() => option4 = val!)),
-                    _buildAmenityCheckbox("🚿 Attached Bathroom", option5, (val) => setState(() => option5 = val!)),
+                    _buildAmenityCheckbox(
+                      "🔒 Locker",
+                      option1,
+                      (val) => setState(() => option1 = val!),
+                    ),
+                    _buildAmenityCheckbox(
+                      "🛋️ Furnished",
+                      option2,
+                      (val) => setState(() => option2 = val!),
+                    ),
+                    _buildAmenityCheckbox(
+                      "🍽️ Food",
+                      option3,
+                      (val) => setState(() => option3 = val!),
+                    ),
+                    _buildAmenityCheckbox(
+                      "🚗 Parking",
+                      option4,
+                      (val) => setState(() => option4 = val!),
+                    ),
+                    _buildAmenityCheckbox(
+                      "🚿 Attached Bathroom",
+                      option5,
+                      (val) => setState(() => option5 = val!),
+                    ),
 
                     _buildSectionTitle(" Description"),
                     _buildTextField(
@@ -620,7 +705,10 @@ void initState() {
                     _buildSectionTitle(" Upload Images"),
                     Text(
                       "* First image is required, others are optional",
-                      style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Colors.grey[600],
+                      ),
                     ),
                     SizedBox(height: 10.h),
                     Row(
@@ -628,33 +716,69 @@ void initState() {
                       children: [
                         _buildImagePicker(
                           pickedfile,
+                          imageurl.isNotEmpty ? imageurl[0] : null,
                           () async {
-                            final file = await _picker.pickImage(source: ImageSource.gallery);
+                            final file = await _picker.pickImage(
+                              source: ImageSource.gallery,
+                            );
                             setState(() => pickedfile = file);
                           },
-                          0, 
+                          () {
+                            setState(() {
+                              pickedfile = null;
+                              if (imageurl.isNotEmpty) imageurl[0] = '';
+                            });
+                          },
+                          0,
                         ),
                         _buildImagePicker(
                           pickedfile2,
+                          imageurl.length > 1 ? imageurl[1] : null,
                           () async {
-                            final file = await _picker.pickImage(source: ImageSource.gallery);
+                            final file = await _picker.pickImage(
+                              source: ImageSource.gallery,
+                            );
                             setState(() => pickedfile2 = file);
+                          },
+                          () {
+                            setState(() {
+                              pickedfile2 = null;
+                              if (imageurl.length > 1) imageurl[1] = '';
+                            });
                           },
                           1,
                         ),
                         _buildImagePicker(
                           pickedfile3,
+                          imageurl.length > 2 ? imageurl[2] : null,
                           () async {
-                            final file = await _picker.pickImage(source: ImageSource.gallery);
+                            final file = await _picker.pickImage(
+                              source: ImageSource.gallery,
+                            );
                             setState(() => pickedfile3 = file);
+                          },
+                          () {
+                            setState(() {
+                              pickedfile3 = null;
+                              if (imageurl.length > 2) imageurl[2] = '';
+                            });
                           },
                           2,
                         ),
                         _buildImagePicker(
                           pickedfile4,
+                          imageurl.length > 3 ? imageurl[3] : null,
                           () async {
-                            final file = await _picker.pickImage(source: ImageSource.gallery);
+                            final file = await _picker.pickImage(
+                              source: ImageSource.gallery,
+                            );
                             setState(() => pickedfile4 = file);
+                          },
+                          () {
+                            setState(() {
+                              pickedfile4 = null;
+                              if (imageurl.length > 3) imageurl[3] = '';
+                            });
                           },
                           3,
                         ),
@@ -699,7 +823,11 @@ void initState() {
                               : Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.check_circle, color: Colors.white, size: 22.sp),
+                                    Icon(
+                                      Icons.check_circle,
+                                      color: Colors.white,
+                                      size: 22.sp,
+                                    ),
                                     SizedBox(width: 8.w),
                                     Text(
                                       "Submit Hostel",

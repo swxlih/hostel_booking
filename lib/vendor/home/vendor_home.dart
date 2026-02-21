@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:hostel_booking/Model/hostelmodel.dart';
 import 'package:hostel_booking/vendor/home/addhostel.dart';
 import 'package:hostel_booking/vendor/home/edithostel.dart';
+import 'package:hostel_booking/vendor/home/vendor_reviews_screen.dart';
 
 class Adminhome extends StatefulWidget {
   const Adminhome({super.key});
@@ -43,22 +44,18 @@ class _AdminhomeState extends State<Adminhome> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xffFEAA61),
-                      Color(0xffFD8D3C),
-                    ],
+                    colors: [Color(0xffFEAA61), Color(0xffFD8D3C)],
                   ),
                 ),
               ),
             ),
             leading: Padding(
-              padding: EdgeInsets.only(left:16.w),
+              padding: EdgeInsets.only(left: 16.w),
               child: CircleAvatar(
                 backgroundColor: Colors.white.withOpacity(0.3),
                 child: Icon(Icons.person, color: Colors.white, size: 24.sp),
               ),
             ),
-           
           ),
 
           // Stats Card
@@ -66,12 +63,17 @@ class _AdminhomeState extends State<Adminhome> {
             child: StreamBuilder(
               stream: FirebaseFirestore.instance
                   .collection('Hostels')
-                  .where('hostelerId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                  .where(
+                    'hostelerId',
+                    isEqualTo: FirebaseAuth.instance.currentUser?.uid,
+                  )
                   .where('status', isEqualTo: 1)
                   .snapshots(),
               builder: (context, snapshot) {
-                int hostelCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
-                
+                int hostelCount = snapshot.hasData
+                    ? snapshot.data!.docs.length
+                    : 0;
+
                 return Container(
                   margin: EdgeInsets.all(16.w),
                   padding: EdgeInsets.all(20.w),
@@ -150,7 +152,10 @@ class _AdminhomeState extends State<Adminhome> {
           StreamBuilder(
             stream: FirebaseFirestore.instance
                 .collection('Hostels')
-                .where('hostelerId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                .where(
+                  'hostelerId',
+                  isEqualTo: FirebaseAuth.instance.currentUser?.uid,
+                )
                 .where('status', isEqualTo: 1)
                 .snapshots(),
             builder: (context, snapshot) {
@@ -273,7 +278,9 @@ class _AdminhomeState extends State<Adminhome> {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(20.r),
+                  ),
                   child: Image.network(
                     hostel.imageUrl == null || hostel.imageUrl!.isEmpty
                         ? 'https://karnatakatourism.org/wp-content/uploads/2020/06/Mysuru-Palace-banner-1920_1100.jpg'
@@ -286,7 +293,9 @@ class _AdminhomeState extends State<Adminhome> {
                 Container(
                   height: 180.h,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(20.r),
+                    ),
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
@@ -302,7 +311,10 @@ class _AdminhomeState extends State<Adminhome> {
                   top: 12.h,
                   right: 12.w,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 6.h,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.green,
                       borderRadius: BorderRadius.circular(20.r),
@@ -310,7 +322,11 @@ class _AdminhomeState extends State<Adminhome> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.check_circle, color: Colors.white, size: 14.sp),
+                        Icon(
+                          Icons.check_circle,
+                          color: Colors.white,
+                          size: 14.sp,
+                        ),
                         SizedBox(width: 4.w),
                         Text(
                           'Active',
@@ -352,7 +368,10 @@ class _AdminhomeState extends State<Adminhome> {
                       ),
                       SizedBox(width: 12.w),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 6.h,
+                        ),
                         decoration: BoxDecoration(
                           color: Color(0xffFEAA61).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12.r),
@@ -368,9 +387,9 @@ class _AdminhomeState extends State<Adminhome> {
                       ),
                     ],
                   ),
-                  
+
                   SizedBox(height: 8.h),
-                  
+
                   // Location
                   Row(
                     children: [
@@ -455,6 +474,43 @@ class _AdminhomeState extends State<Adminhome> {
                       ),
                     ],
                   ),
+
+                  SizedBox(height: 12.h),
+
+                  // View Reviews Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => VendorReviewsScreen(
+                              hostelId: hostel.hostelid!,
+                              hostelName: hostel.hostelName ?? 'Unknown',
+                            ),
+                          ),
+                        );
+                      },
+                      icon: Icon(Icons.reviews_rounded, size: 18.sp),
+                      label: Text(
+                        'View Reviews',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[50],
+                        foregroundColor: Colors.blue[700],
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -474,7 +530,11 @@ class _AdminhomeState extends State<Adminhome> {
           ),
           title: Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28.sp),
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.orange,
+                size: 28.sp,
+              ),
               SizedBox(width: 12.w),
               Text(
                 'Remove Hostel',
